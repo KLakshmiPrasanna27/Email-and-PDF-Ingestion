@@ -1,0 +1,24 @@
+npm intall imap-simple
+//Create utils/emailsFetcher.ts:
+import imaps from "imap-simple";
+
+export async function fetchEmails() {
+  const config = {
+    imap: {
+      user: "your-email@gmail.com",
+      password: "your-password",
+      host: "imap.gmail.com",
+      port: 993,
+      tls: true,
+    },
+  };
+
+  const connection = await imaps.connect(config);
+  await connection.openBox("INBOX");
+
+  const messages = await connection.search(["ALL"], { bodies: ["HEADER", "TEXT"] });
+  return messages.map((msg) => ({
+    subject: msg.parts.find((p) => p.which === "HEADER")?.body.subject[0],
+    body: msg.parts.find((p) => p.which === "TEXT")?.body,
+  }));
+}
