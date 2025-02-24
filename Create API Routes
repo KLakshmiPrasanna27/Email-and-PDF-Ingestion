@@ -1,0 +1,27 @@
+import { NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+export async function POST(req: Request) {
+  try {
+    const data = await req.json();
+
+    // Save email configuration to database
+    const emailConfig = await prisma.emailConfig.create({
+      data: {
+        email: data.email,
+        connectionType: data.connectionType,
+        username: data.username,
+        password: data.password,
+        host: data.host,
+        port: parseInt(data.port, 10),
+      },
+    });
+
+    return NextResponse.json(emailConfig, { status: 201 });
+  } catch (error) {
+    console.error("Error saving email config:", error);
+    return NextResponse.json({ error: "Failed to save email config" }, { status: 500 });
+  }
+}
