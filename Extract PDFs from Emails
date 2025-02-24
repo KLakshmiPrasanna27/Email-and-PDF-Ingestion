@@ -1,0 +1,11 @@
+Install pdf-parse:
+npm install pdf-parse
+//Modify utils/emailsFetcher.ts:
+import pdfParse from "pdf-parse";
+import fs from "fs";
+
+export async function extractPdfText(pdfPath: string) {
+  const dataBuffer = fs.readFileSync(pdfPath);
+  const data = await pdfParse(dataBuffer);
+  return data.text;
+}
