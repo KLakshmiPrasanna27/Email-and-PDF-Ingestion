@@ -1,0 +1,41 @@
+// Step 1: Install Dependencies // Run these commands in your terminal: // npx create-next-app@latest email-pdf-ingestion --typescript // cd email-pdf-ingestion // npm install prisma @prisma/client postgres imap-simple pdf-parse next-auth // npx prisma init
+
+// Step 2: Configure Environment Variables (.env) // Create a .env file in the root folder DATABASE_URL="postgresql://user:password@localhost:5432/emailpdfdb"
+
+// Step 3: Define Prisma Schema (prisma/schema.prisma) model EmailConfig { id         String  @id @default(uuid()) email      String  @unique createdAt  DateTime @default(now()) }
+
+model Email { id         String  @id @default(uuid()) subject    String sender     String body       String pdfPath    String? createdAt  DateTime @default(now()) }
+
+// Run migration // npx prisma migrate dev --name init
+
+// Step 4: Create API Routes (app/api/email-config/route.ts) import { NextRequest, NextResponse } from "next/server"; import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+export async function GET() { const configs = await prisma.emailConfig.findMany(); return NextResponse.json(configs); }
+
+export async function POST(req: NextRequest) { const data = await req.json(); const newConfig = await prisma.emailConfig.create({ data }); return NextResponse.json(newConfig); }
+
+// Step 5: Create UI for Email Config (app/page.tsx) "use client"; import { useState } from "react";
+
+export default function Home() { const [email, setEmail] = useState("");
+
+const handleSubmit = async (e: React.FormEvent) => { e.preventDefault(); await fetch("/api/email-config", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }), }); };
+
+return ( <form onSubmit={handleSubmit}> <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /> <button type="submit">Save</button> </form> ); }
+
+// Step 6: Fetch Emails using IMAP (utils/emailFetcher.ts) import imaps from "imap-simple";
+
+export async function fetchEmails() { const config = { imap: { user: "your-email@gmail.com", password: "your-password", host: "imap.gmail.com", port: 993, tls: true, }, };
+
+const connection = await imaps.connect(config); await connection.openBox("INBOX");
+
+const messages = await connection.search(["ALL"], { bodies: ["HEADER", "TEXT"] }); return messages.map((msg) => ({ subject: msg.parts.find((p) => p.which === "HEADER")?.body.subject[0], body: msg.parts.find((p) => p.which === "TEXT")?.body, })); }
+
+// Step 7: Extract PDFs from Emails (utils/pdfProcessor.ts) import pdfParse from "pdf-parse"; import fs from "fs";
+
+export async function extractPdfText(pdfPath: string) { const dataBuffer = fs.readFileSync(pdfPath); const data = await pdfParse(dataBuffer); return data.text; }
+
+// Step 8: Deploy on Vercel // npm install -g vercel // vercel login // vercel
+
+// Step 9: Push to GitHub // git init // git add . // git commit -m "Initial commit" // git branch -M main // git remote add origin https://github.com/your-username/email-pdf-ingestion.git // git push -u origin main
