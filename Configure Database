@@ -1,0 +1,33 @@
+DATABASE_URL="postgresql://postgres:Sapa@123@localhost:5432/email_pdf_ingestion?schema=public"
+//This helps us to create the environment
+//Define the Prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model EmailConfig {
+  id          String  @id @default(uuid())
+  email       String  @unique
+  connectionType String
+  username    String
+  password    String
+  host        String
+  port        Int
+  createdAt   DateTime @default(now())
+}
+
+model PdfMetadata {
+  id                String  @id @default(uuid())
+  emailConfigId     String
+  emailConfig       EmailConfig @relation(fields: [emailConfigId], references: [id])
+  fromAddress       String
+  subject           String
+  dateReceived      DateTime
+  attachmentFileName String
+  createdAt         DateTime @default(now())
+}
